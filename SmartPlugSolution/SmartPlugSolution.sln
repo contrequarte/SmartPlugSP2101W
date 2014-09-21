@@ -1,0 +1,28 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 2013
+VisualStudioVersion = 12.0.30723.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SmartPlugExample", "SmartPlugExample.csproj", "{E1223800-C08D-47FC-89B1-287D391F5915}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SmartPlug", "..\SmartPlug\SmartPlug.csproj", "{F9CBB412-F247-451E-8914-533FB7A97D7B}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{E1223800-C08D-47FC-89B1-287D391F5915}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E1223800-C08D-47FC-89B1-287D391F5915}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E1223800-C08D-47FC-89B1-287D391F5915}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E1223800-C08D-47FC-89B1-287D391F5915}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F9CBB412-F247-451E-8914-533FB7A97D7B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F9CBB412-F247-451E-8914-533FB7A97D7B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F9CBB412-F247-451E-8914-533FB7A97D7B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F9CBB412-F247-451E-8914-533FB7A97D7B}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
