@@ -99,19 +99,24 @@ namespace Contrequarte.SmartPlug
             return energyPeriodRequest;
         }
 
-        public static XDocument GetEntireScheduling()
+        /// <summary>
+        /// Returns a XDocument as template for getting/setting schedules
+        /// </summary>
+        /// <param name="isSetup">true returns a "setuo" template, false a "get" template</param>
+        /// <returns>Xdocument as template for getting/setting schedules</returns>
+        public static XDocument GetEntireScheduling(bool isSetup)
         {
-            return XDocument.Parse(@"<?xml version=""1.0"" encoding=""UTF8""?>
-                                     <SMARTPLUG id=""edimax"">
-                                        <CMD id=""get"">
-                                           <SCHEDULE/>
-                                        </CMD>
-                                     </SMARTPLUG>");
+            return XDocument.Parse(string.Format(@"<?xml version=""1.0"" encoding=""UTF8""?>
+                                                   <SMARTPLUG id=""edimax"">
+                                                      <CMD id=""{0}"">
+                                                         <SCHEDULE/>
+                                                      </CMD>
+                                                   </SMARTPLUG>",isSetup?"setup":"get"));
         }
 
         public static XDocument GetScheduledListForDayOfWeek(DayOfWeek dayOfWeek)
         {
-            XDocument dayScheduleRequest = GetEntireScheduling();
+            XDocument dayScheduleRequest = GetEntireScheduling(false);
             XElement weekDayListElement = null;
             switch (dayOfWeek)
             {
@@ -142,6 +147,54 @@ namespace Contrequarte.SmartPlug
             }
 
             dayScheduleRequest.Descendants("SCHEDULE").First().Add(weekDayListElement);
+
+            return dayScheduleRequest;
+        }
+
+        public static XDocument SetScheduleForDayOfWeek(DayOfWeek dayOfWeek)
+        {
+            XDocument dayScheduleRequest = GetEntireScheduling(true);
+
+            XElement weekDayPowerScheduleList = null;
+            XElement weekDayPowerSchedule = null;
+            switch (dayOfWeek)
+            {
+                case DayOfWeek.Sunday:
+                    weekDayPowerScheduleList = new XElement("Device.System.Power.Schedule.0.List");
+                    weekDayPowerSchedule = new XElement("Device.System.Power.Schedule.0");
+                    break;
+                case DayOfWeek.Monday:
+                    weekDayPowerScheduleList = new XElement("Device.System.Power.Schedule.1.List");
+                    weekDayPowerSchedule = new XElement("Device.System.Power.Schedule.1");
+                    break;
+                case DayOfWeek.Tuesday:
+                    weekDayPowerScheduleList = new XElement("Device.System.Power.Schedule.2.List");
+                    weekDayPowerSchedule = new XElement("Device.System.Power.Schedule.2");
+                    break;
+                case DayOfWeek.Wednesday:
+                    weekDayPowerScheduleList = new XElement("Device.System.Power.Schedule.3.List");
+                    weekDayPowerSchedule = new XElement("Device.System.Power.Schedule.3");
+                    break;
+                case DayOfWeek.Thursday:
+                    weekDayPowerScheduleList = new XElement("Device.System.Power.Schedule.4.List");
+                    weekDayPowerSchedule = new XElement("Device.System.Power.Schedule.4");
+                    break;
+                case DayOfWeek.Friday:
+                    weekDayPowerScheduleList = new XElement("Device.System.Power.Schedule.5.List");
+                    weekDayPowerSchedule = new XElement("Device.System.Power.Schedule.5");
+                    break;
+                case DayOfWeek.Saturday:
+                    weekDayPowerScheduleList = new XElement("Device.System.Power.Schedule.6.List");
+                    weekDayPowerSchedule = new XElement("Device.System.Power.Schedule.6");
+                    break;
+                default:
+                    throw new Exception(string.Format(@"Not supported parameter value: ""{0}"" forSetScheduleForDayOfWeek(DayOfWeek dayOfWeek)",
+                           dayOfWeek.ToString()));
+            }
+            
+            dayScheduleRequest.Descendants("SCHEDULE").First().Add(weekDayPowerSchedule);
+            dayScheduleRequest.Descendants("SCHEDULE").First().AddFirst(weekDayPowerScheduleList);
+
 
             return dayScheduleRequest;
         }

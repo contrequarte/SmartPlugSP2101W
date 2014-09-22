@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -14,6 +15,9 @@ namespace Contrequarte.SmartPlug
         #region constants
         const int port = 10000;
         const string landingPage = "smartplug.cgi"; //http://192.168.2.61:10000/smartplug.cgi
+
+        private const int MinutesOfADay = 24 * 60;
+
         #endregion constants
 
         #region public properties
@@ -59,12 +63,6 @@ namespace Contrequarte.SmartPlug
 
         #region public methods
 
-        public void GetEntireSchedule()
-        {
-             XDocument plugRequest = SmartPlugMessages.GetEntireScheduling();
-             XDocument plugResponse = SendMessage(plugRequest);
-             int i = 3;
-        }
         public IEnumerable<ScheduledEntry> GetScheduleForWeekDay(DayOfWeek dayOfWeek)
         {
             /* expected return looks like that:
@@ -83,6 +81,43 @@ namespace Contrequarte.SmartPlug
             string scheduledList = plugResponse.Descendants("SCHEDULE").First().Elements().First().Value;
 
             return TimePeriod.EdimaxScheduleList2ScheduledEntries(scheduledList);
+        }
+
+        public void SetScheduleForWeekDay(DayOfWeek dayOfWeek, IEnumerable<ScheduledEntry> entriesToSchedule)
+        {
+            XDocument xmlSetScheduleMessage = SmartPlugMessages.SetScheduleForDayOfWeek(dayOfWeek);
+
+            XElement scheduleNode = xmlSetScheduleMessage.Descendants("SCHEDULE").First();
+            foreach (XElement xElement in scheduleNode.Elements())
+            {
+                if(xElement.Name.ToString().Contains("Device.System.Power.Schedule."))
+                {
+                    if(xElement.Name.ToString().Contains(".List"))
+                    {
+                        xElement.Value = PreparePowerScheduleList(entriesToSchedule);
+                    }
+                    else
+                    {
+                       xElement.Value =  PreparePowerSchedule(entriesToSchedule);
+                    }
+                }
+            }
+
+            XDocument xmlResponse = SendMessage(xmlSetScheduleMessage);
+            int i = 3;
+        }
+
+        public decimal GetCummulatedPowerConsumption(EnergyPeriods energyPeriod)
+        {
+            /*
+             * <Device.System.Power.NowEnergy.Month>0.107</Device.System.Power.NowEnergy.Month> 
+             */
+            XDocument plugRequest = SmartPlugMessages.GetNowEnergy(energyPeriod);
+            XDocument plugResponse = SendMessage(plugRequest);
+
+            string powerConsumption =  plugResponse.Descendants("NOW_POWER").First().Elements().First().Value;
+
+            return Convert.ToDecimal(powerConsumption, new CultureInfo("en-US"));
         }
 
         #endregion public methods 
@@ -122,6 +157,88 @@ namespace Contrequarte.SmartPlug
             return xmlResponse;
         }
 
+        private string PreparePowerSchedule(IEnumerable<ScheduledEntry> entriesToSchedule)
+        {
+            int[] minuteSchedule = InitMinuteSchedule(); // an array containing one element for each minute of a day
+
+            
+            foreach (ScheduledEntry entry in entriesToSchedule)
+            {
+                // filling in scheduled minutes for each scheduled entry
+                FillMinuteSchedule(entry, ref minuteSchedule);
+            }
+
+            //Transfer it to a 360 elements based hex schedule
+
+            char[] hexSchedule = InitHexSchedule();
+
+            int schedulePosition = 0;
+            for (int quadrupletStart = 0; quadrupletStart < MinutesOfADay; quadrupletStart += 4)
+            {
+                hexSchedule[schedulePosition] = QuadrupletToHex(minuteSchedule, quadrupletStart);
+                schedulePosition++;
+            }
+
+            return new string(hexSchedule); // string with length 360, each position contains a value between '0' and 'F'
+        }
+
+        private string PreparePowerScheduleList(IEnumerable<ScheduledEntry> entriesToSchedule)
+        {
+            StringBuilder entireList = new StringBuilder();
+            foreach (ScheduledEntry entry in entriesToSchedule)
+            {
+                entireList.Append(entry.AsEdimaxScheduledEntry() + "-");
+            }
+            string result = entireList.ToString();
+
+            return result.Substring(0, result.Length - 1);
+        }
+
+        private static char[] InitHexSchedule()
+        {
+            char[] scheduleTemplate = new char[360];
+            for (int i = 0; i < 360; i++)
+            {
+                scheduleTemplate[i] = '0';
+            }
+            return scheduleTemplate;
+        }
+
+        private static int[] InitMinuteSchedule()
+        {
+            int[] scheduleTemplate = new int[MinutesOfADay];
+            for (int i = 0; i < MinutesOfADay; i++)
+            {
+                scheduleTemplate[i] = 0;
+            }
+            return scheduleTemplate;
+        }
+
+        static void FillMinuteSchedule(ScheduledEntry entry, ref int[] minuteSchedule)
+        {
+            FillMinuteSchedule(entry.Period.Begin.Hour, entry.Period.Begin.Minute, 
+                               entry.Period.End.Hour, entry.Period.End.Minute, ref minuteSchedule);
+
+        }
+        static void FillMinuteSchedule(int fromHour, int fromMinute, int toHour, int toMinute, ref int[] minuteSchedule)
+        {
+            int begin = fromHour * 60 + fromMinute;
+            int end = toHour * 60 + toMinute;
+            for (int pos = begin; pos < end; pos++)
+            {
+                minuteSchedule[pos] = 1;
+            }
+        }
+
+        private static char QuadrupletToHex(int[] minuteSchedule, int quadrupletBaseAdress)
+        {
+            int quadrupletSum = 0;
+            for (int position = quadrupletBaseAdress; position < (quadrupletBaseAdress + 4); position++)
+            {
+                quadrupletSum = quadrupletSum * 2 + minuteSchedule[position];
+            }
+            return quadrupletSum.ToString("X")[0];
+        }
 
         #endregion private methods
     }
