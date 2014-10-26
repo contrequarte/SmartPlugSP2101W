@@ -6,18 +6,67 @@ using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 
-using Contrequarte.SmartPlug;
+using Contrequarte.SmartPlug.Core;
+using Contrequarte.SmartPlugFinder;
+using System.Net.Sockets;
 
 namespace SmartPlugExample
 {
     class Program
     {
+        const long LISTENINGPORT = 54520;
+        const long SENDINGPORT = 20560;
+
         static void Main(string[] args)
         {
-            // initializing adapter
-            SmartPlug smartPlug = new SmartPlug("192.168.2.61", "admin", "1234"); //Please use your IP, UserName, PassWord...
+            List<IPAddress> ipAdresses = GetLoacalIPAddresses();
+            if (ipAdresses.Count() <= 0)
+            {
+                System.Console.WriteLine("No valid IP address found, please check your network seetings!");
+            }
+            else
+            {
+                if (ipAdresses.Count() > 1)
+                {
+                    System.Console.WriteLine("More than one IP address found!");
+                    for (int i = 0; i < ipAdresses.Count(); i++)
+                    {
+                        System.Console.WriteLine(ipAdresses[i].ToString());
+                    }
+                }
+                System.Console.WriteLine(string.Format("Local IP address used for this demo: {0}", ipAdresses[0].ToString()));
+                
+                SmartPlug plugToPlayWith = DeviceFinderDemo(ipAdresses[0]);
+                plugToPlayWith.UserName = "admin";
+                plugToPlayWith.PassWord = "1234";
+                System.Console.WriteLine(string.Format("SmartPlug used for further demo: Name: {0}  IP: {1}", plugToPlayWith.Details.Name, plugToPlayWith.IpAddress.ToString()));
+                PlugPlayDemo(plugToPlayWith);
+            }
+            int j = ipAdresses.Count();
+        }
+        static SmartPlug DeviceFinderDemo(IPAddress ipAddressToUse)
+        {
 
-            
+            DeviceFinder deviceFinder = new DeviceFinder(SENDINGPORT, LISTENINGPORT);
+
+            // finding devices in the network(s), the computer is located, as these could be
+            // more than one, tell the FindDevices method, which IP to use.
+            IEnumerable<Contrequarte.SmartPlug.Core.SmartPlug> smartPlugs = deviceFinder.FindDevices(ipAddressToUse);
+
+            foreach(var smartP in smartPlugs)
+            {
+                System.Console.WriteLine(string.Format("Name: {0} IP:{1} model: {2} sw version: {3} "
+                          , smartP.Details.Name, smartP.IpAddress, smartP.Details.Model, smartP.Details.SoftwareVersion));
+            }
+
+            int i = smartPlugs.Count();
+            return smartPlugs.First();
+        }
+
+        static void PlugPlayDemo(SmartPlug smartPlug )
+        {
+            // initializing adapter
+            //SmartPlug smartPlug = new SmartPlug(new IPAddress(new byte[] {a, b, c, d}), "lala", "9999"); //Please use your IP, UserName, PassWord...       
 
             //displaying current state on the 
             System.Console.WriteLine(string.Format("Current state of the smartplug is: {0}. Hit Enter key to continue!", smartPlug.Status.ToString()));
@@ -69,6 +118,21 @@ namespace SmartPlugExample
                                           entry.Period.End.Hour.ToString("D2"), entry.Period.End.Minute.ToString("D2"),
                                           entry.Enabled ? "enabled" : "disabled"));
             }
+        }
+
+        static List<IPAddress> GetLoacalIPAddresses()
+        {
+            List<IPAddress> ipList = new List<IPAddress>();
+            IPHostEntry host = Dns.GetHostEntry(Dns.GetHostName());
+            foreach (IPAddress ip in host.AddressList)
+            {
+                if (ip.AddressFamily == AddressFamily.InterNetwork)
+                {
+                    ipList.Add(ip);
+                    break;
+                }
+            }
+            return ipList;
         }
     }
 }

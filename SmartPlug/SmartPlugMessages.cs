@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Xml.Linq;
 
-namespace Contrequarte.SmartPlug
+namespace Contrequarte.SmartPlug.Core
 {
     public class SmartPlugMessages
     {

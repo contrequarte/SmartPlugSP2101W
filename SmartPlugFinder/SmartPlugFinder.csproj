@@ -4,16 +4,15 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{E1223800-C08D-47FC-89B1-287D391F5915}</ProjectGuid>
-    <OutputType>Exe</OutputType>
+    <ProjectGuid>{9D1A3938-B3ED-4E80-95AA-F041397D3CEB}</ProjectGuid>
+    <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>SmartPlugExample</RootNamespace>
-    <AssemblyName>SmartPlugExample</AssemblyName>
+    <RootNamespace>Contrequarte.SmartPlugFinder</RootNamespace>
+    <AssemblyName>Contrequarte.SmartPlugFinder</AssemblyName>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <PlatformTarget>AnyCPU</PlatformTarget>
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
@@ -23,7 +22,6 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <PlatformTarget>AnyCPU</PlatformTarget>
     <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
     <OutputPath>bin\Release\</OutputPath>
@@ -41,17 +39,11 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Program.cs" />
+    <Compile Include="DeviceFinder.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="UdpState.cs" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="App.config" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\SmartPlugFinder\SmartPlugFinder.csproj">
-      <Project>{9d1a3938-b3ed-4e80-95aa-f041397d3ceb}</Project>
-      <Name>SmartPlugFinder</Name>
-    </ProjectReference>
     <ProjectReference Include="..\SmartPlug\SmartPlug.csproj">
       <Project>{f9cbb412-f247-451e-8914-533fb7a97d7b}</Project>
       <Name>SmartPlug</Name>

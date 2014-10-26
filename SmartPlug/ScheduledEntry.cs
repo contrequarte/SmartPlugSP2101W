@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Contrequarte.SmartPlug
+namespace Contrequarte.SmartPlug.Core
 {
     public class ScheduledEntry
     {

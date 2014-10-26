@@ -8,21 +8,26 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Xml.Linq;
 
-namespace Contrequarte.SmartPlug
+namespace Contrequarte.SmartPlug.Core
 {
     public class SmartPlug
     {
         #region constants
         const int port = 10000;
-        const string landingPage = "smartplug.cgi"; //http://192.168.2.61:10000/smartplug.cgi
+        const string landingPage = "smartplug.cgi"; 
 
         private const int MinutesOfADay = 24 * 60;
 
         #endregion constants
 
         #region public properties
-        public string IpAddress { get; private set; }
-        public string UserName { get; private set; }
+        public IPAddress IpAddress { get; private set; }
+        public string UserName { get; set; }
+        public string PassWord {
+            get {return "****";}
+            set {password = value;}
+        }
+        public SmartPlugDetails Details {get; private set;}
         public SmartPlugState Status
         {
             get
@@ -45,23 +50,38 @@ namespace Contrequarte.SmartPlug
                 XDocument plugResponse = SendMessage(plugRequest);
             }
         }
+        bool HasUserNameAndPassword
+        {
+            get
+            {
+                return !((string.IsNullOrEmpty(password)) || (string.IsNullOrEmpty(UserName)));
+
+            }
+        }
         #endregion public properties
 
         #region private properties
         private string password;
-        private string targetUri { get { return string.Format("http://{0}:{1}/{2}", IpAddress, port, landingPage); } }
+        private string targetUri { get { return string.Format("http://{0}:{1}/{2}", IpAddress.ToString(), port, landingPage); } }
         #endregion private properties
 
         #region constructor
-        public SmartPlug(string ipAddress, string userName, string password)
+        public SmartPlug(IPAddress ipAddress, string userName, string password)
         {
             IpAddress = ipAddress;
             UserName = userName;
             this.password = password;
         }
+
+        public SmartPlug(IPAddress ipAddress, SmartPlugDetails details)
+        {
+            IpAddress = ipAddress;
+            Details = details;
+        }
+
         #endregion constructor
 
-        #region public methods
+        #region public methods 
 
         public IEnumerable<ScheduledEntry> GetScheduleForWeekDay(DayOfWeek dayOfWeek)
         {
@@ -109,6 +129,11 @@ namespace Contrequarte.SmartPlug
 
         public decimal GetCummulatedPowerConsumption(EnergyPeriods energyPeriod)
         {
+            // power metrics are available for model "SP2101W " model "SP1101W" doesen't support power metrics!
+            if (this.Details.Model.ToUpper() != "SP2101W")
+            {
+                return 0;
+            }
             /*
              * <Device.System.Power.NowEnergy.Month>0.107</Device.System.Power.NowEnergy.Month> 
              */

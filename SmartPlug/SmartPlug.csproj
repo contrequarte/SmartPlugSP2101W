@@ -7,7 +7,7 @@
     <ProjectGuid>{F9CBB412-F247-451E-8914-533FB7A97D7B}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>Contrequarte.SmartPlug</RootNamespace>
+    <RootNamespace>Contrequarte.SmartPlug.Core</RootNamespace>
     <AssemblyName>Contrequarte.SmartPlug</AssemblyName>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
@@ -44,6 +44,7 @@
     <Compile Include="PointInTime.cs" />
     <Compile Include="SmartPlug.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="SmartPlugDetails.cs" />
     <Compile Include="SmartPlugMessages.cs" />
     <Compile Include="TimePeriod.cs" />
   </ItemGroup>
