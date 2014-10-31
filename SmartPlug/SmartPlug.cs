@@ -4,6 +4,7 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Security;
 using System.Text;
 using System.Threading.Tasks;
 using System.Xml.Linq;
@@ -25,7 +26,12 @@ namespace Contrequarte.SmartPlug.Core
         public string UserName { get; set; }
         public string PassWord {
             get {return "****";}
-            set {password = value;}
+            set
+            {
+                password.Clear();
+                foreach(char c in value)
+                    password.AppendChar(c);
+            }
         }
         public SmartPlugDetails Details {get; private set;}
         public SmartPlugState Status
@@ -54,14 +60,14 @@ namespace Contrequarte.SmartPlug.Core
         {
             get
             {
-                return !((string.IsNullOrEmpty(password)) || (string.IsNullOrEmpty(UserName)));
+                return !((password.Length == 0) || (string.IsNullOrEmpty(UserName)));
 
             }
         }
         #endregion public properties
 
         #region private properties
-        private string password;
+        private SecureString password = new SecureString();
         private string targetUri { get { return string.Format("http://{0}:{1}/{2}", IpAddress.ToString(), port, landingPage); } }
         #endregion private properties
 
@@ -70,7 +76,7 @@ namespace Contrequarte.SmartPlug.Core
         {
             IpAddress = ipAddress;
             UserName = userName;
-            this.password = password;
+            this.PassWord = password;
         }
 
         public SmartPlug(IPAddress ipAddress, SmartPlugDetails details)
@@ -141,6 +147,8 @@ namespace Contrequarte.SmartPlug.Core
             XDocument plugResponse = SendMessage(plugRequest);
 
             string powerConsumption =  plugResponse.Descendants("NOW_POWER").First().Elements().First().Value;
+            if (string.IsNullOrEmpty(powerConsumption))
+                return 0;
 
             return Convert.ToDecimal(powerConsumption, new CultureInfo("en-US"));
         }

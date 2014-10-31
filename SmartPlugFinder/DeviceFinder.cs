@@ -13,10 +13,22 @@ namespace Contrequarte.SmartPlugFinder
     public class DeviceFinder
     {
         AsyncCallback asyncCallback;
+        bool searching;
+        static object Lock = new object();
         UdpState udpState;
+        Timer timeout;
+        int timeoutPeriod = 45000;
         List<SmartPlug.Core.SmartPlug> smartPlugList;
         public long SendingPort {get; set;}
-        public long ListeningPort {get; set;} 
+        public long ListeningPort {get; set;}
+
+        public List<SmartPlug.Core.SmartPlug> SmartPlugList
+        {
+            get
+            {
+                return smartPlugList;
+            }
+        }
 
         public DeviceFinder(long sendingPort, long listeningPort)
         {
@@ -24,7 +36,7 @@ namespace Contrequarte.SmartPlugFinder
             ListeningPort = listeningPort;
         }
 
-        public IEnumerable<SmartPlug.Core.SmartPlug> FindDevices(IPAddress ipAddressOfSender)
+        public void FindDevices(IPAddress ipAddressOfSender)
         {
             smartPlugList = new List<SmartPlug.Core.SmartPlug>();
 
@@ -40,29 +52,52 @@ namespace Contrequarte.SmartPlugFinder
             asyncCallback = new AsyncCallback(ReceiveSmartPlugCallBack);
 
             //sending a "Hello" to all smartplugs in the network
-            
+            searching = true;
             SendHelloToPlugs(new IPAddress(broadcastIpAddress), udpState.UdpClient);
+            udpState.UdpClient.BeginReceive(asyncCallback, udpState);
 
-            Thread.Sleep(500); // time to wait for an reaction
+            timeout = new Timer(new TimerCallback(TimeCallBack), null, timeoutPeriod, 0);
+            //Thread.Sleep(500); // time to wait for an reaction
 
-            while (listenClient.Available>0)
-            { 
-                udpState.UdpClient.BeginReceive(asyncCallback, udpState);
-                Thread.Sleep(500);
-            }
+            //while (listenClient.Available>0)
+            //{ 
+            //    Thread.Sleep(500);
+            //}
 
-            return (IEnumerable<SmartPlug.Core.SmartPlug>)smartPlugList;
+            //return (IEnumerable<SmartPlug.Core.SmartPlug>)smartPlugList;
         }
 
         private void ReceiveSmartPlugCallBack(IAsyncResult ar)
         {
+            if (searching)
+            {
+                // Reset the timeout
+                timeout.Change(timeoutPeriod, 0);
 
-            UdpClient udpClient = (UdpClient)((UdpState)(ar.AsyncState)).UdpClient;
-            //IPEndPoint ipEndPoint = (IPEndPoint)((UdpState)(ar.AsyncState)).EndPoint;
-            IPEndPoint ipEndPoint = new IPEndPoint(IPAddress.Any, 0);
-            byte[] receivedBytes = udpClient.EndReceive(ar, ref ipEndPoint);
-            smartPlugList.Add(new SmartPlug.Core.SmartPlug(ipEndPoint.Address, GetSmartPlugDetails(receivedBytes)));
+                lock (Lock)
+                {
+                    UdpClient udpClient = (UdpClient)((UdpState)(ar.AsyncState)).UdpClient;
+                    if (udpClient.Client != null)
+                    {
+                        //IPEndPoint ipEndPoint = (IPEndPoint)((UdpState)(ar.AsyncState)).EndPoint;
+                        IPEndPoint ipEndPoint = new IPEndPoint(IPAddress.Any, 0);
+                        byte[] receivedBytes = udpClient.EndReceive(ar, ref ipEndPoint);
+                        smartPlugList.Add(new SmartPlug.Core.SmartPlug(ipEndPoint.Address, GetSmartPlugDetails(receivedBytes)));
 
+                        udpState.UdpClient.BeginReceive(asyncCallback, udpState);
+                    }
+                }
+            }
+        }
+
+        public void TimeCallBack(object o)
+        {
+            lock (Lock)
+            {
+                // Close the connection
+                udpState.UdpClient.Close();
+                searching = false;
+            }
         }
 
         public void SendHelloToPlugs(IPAddress broadcastAddress, UdpClient udpClient)

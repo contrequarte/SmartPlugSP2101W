@@ -51,7 +51,9 @@ namespace SmartPlugExample
 
             // finding devices in the network(s), the computer is located, as these could be
             // more than one, tell the FindDevices method, which IP to use.
-            IEnumerable<Contrequarte.SmartPlug.Core.SmartPlug> smartPlugs = deviceFinder.FindDevices(ipAddressToUse);
+            deviceFinder.FindDevices(ipAddressToUse);
+            System.Threading.Thread.Sleep(30000);
+            IEnumerable<Contrequarte.SmartPlug.Core.SmartPlug> smartPlugs = deviceFinder.SmartPlugList;
 
             foreach(var smartP in smartPlugs)
             {
