@@ -12,32 +12,60 @@ namespace Contrequarte.SmartPlugFinder
 {
     public class DeviceFinder
     {
+
+        #region private properties
+
         AsyncCallback asyncCallback;
         bool searching;
         static object Lock = new object();
         UdpState udpState;
+        private List<SmartPlug.Core.SmartPlug> smartPlugList;
         Timer timeout;
-        int timeoutPeriod = 45000;
-        List<SmartPlug.Core.SmartPlug> smartPlugList;
-        public long SendingPort {get; set;}
-        public long ListeningPort {get; set;}
 
-        public List<SmartPlug.Core.SmartPlug> SmartPlugList
+        #endregion private properties
+
+        #region public properties
+
+        public long SendingPort {get; private set;}
+        public long ListeningPort {get; private set;}
+        public int TimeoutPeriod 
+        { 
+            get; private set; 
+        }
+        public bool IsStillSearching
+        {
+            get { return searching; }
+        }
+        public IReadOnlyCollection<SmartPlug.Core.SmartPlug> SmartPlugList
         {
             get
             {
-                return smartPlugList;
+                return smartPlugList.AsReadOnly();
             }
         }
+        
+        #endregion public properties
 
-        public DeviceFinder(long sendingPort, long listeningPort)
+        #region constructors
+
+        public DeviceFinder(long sendingPort, long listeningPort) : this(sendingPort, listeningPort, 45000)
+        {
+        }
+
+        public DeviceFinder(long sendingPort, long listeningPort, int timeoutPeriod)
         {
             SendingPort = sendingPort;
             ListeningPort = listeningPort;
+            TimeoutPeriod = timeoutPeriod;
         }
+
+        #endregion constructors
+
+        #region public methods
 
         public void FindDevices(IPAddress ipAddressOfSender)
         {
+            searching = true;
             smartPlugList = new List<SmartPlug.Core.SmartPlug>();
 
             //Assuming to work with a class C IP address, so broadcast address looks like a.b.c.255
@@ -52,27 +80,23 @@ namespace Contrequarte.SmartPlugFinder
             asyncCallback = new AsyncCallback(ReceiveSmartPlugCallBack);
 
             //sending a "Hello" to all smartplugs in the network
-            searching = true;
             SendHelloToPlugs(new IPAddress(broadcastIpAddress), udpState.UdpClient);
+
             udpState.UdpClient.BeginReceive(asyncCallback, udpState);
 
-            timeout = new Timer(new TimerCallback(TimeCallBack), null, timeoutPeriod, 0);
-            //Thread.Sleep(500); // time to wait for an reaction
-
-            //while (listenClient.Available>0)
-            //{ 
-            //    Thread.Sleep(500);
-            //}
-
-            //return (IEnumerable<SmartPlug.Core.SmartPlug>)smartPlugList;
+            timeout = new Timer(new TimerCallback(TimeCallBack), null, TimeoutPeriod, 0);
         }
+
+        #endregion public methods
+
+        #region private methods
 
         private void ReceiveSmartPlugCallBack(IAsyncResult ar)
         {
             if (searching)
             {
                 // Reset the timeout
-                timeout.Change(timeoutPeriod, 0);
+                timeout.Change(TimeoutPeriod, 0);
 
                 lock (Lock)
                 {
@@ -90,7 +114,7 @@ namespace Contrequarte.SmartPlugFinder
             }
         }
 
-        public void TimeCallBack(object o)
+        private void TimeCallBack(object o)
         {
             lock (Lock)
             {
@@ -100,7 +124,7 @@ namespace Contrequarte.SmartPlugFinder
             }
         }
 
-        public void SendHelloToPlugs(IPAddress broadcastAddress, UdpClient udpClient)
+        private void SendHelloToPlugs(IPAddress broadcastAddress, UdpClient udpClient)
         {
              UdpClient client = udpClient;
              client.EnableBroadcast = true;
@@ -118,7 +142,7 @@ namespace Contrequarte.SmartPlugFinder
         /// Evaluating the UDP datagram received to get model, sw version and name
         /// of a smart plug
         /// </summary>
-        /// <param name="smartplugUdpDataGram">byte array sent as answer from an smart plug</param>
+        /// <param name="smartplugUdpDataGram">byte array sent as answer from a smart plug</param>
         /// <returns>A SmartPlugDetails object with details of the smart plug </returns>
         private SmartPlugDetails GetSmartPlugDetails(byte[] smartplugUdpDataGram)
         {
@@ -133,7 +157,6 @@ namespace Contrequarte.SmartPlugFinder
             return new SmartPlugDetails(model,softwareVersion, smartPlugName);
         }
 
-
         private string ReturnStringValue(byte[] smartplugUdpDataGram, int startAddress)
         {
             int offSet = 0;
@@ -144,6 +167,9 @@ namespace Contrequarte.SmartPlugFinder
             return Encoding.ASCII.GetString(smartplugUdpDataGram, startAddress, offSet);
         }
 
+        #endregion private methods
+
+        //TODO remove this method, when no longer needed
         public static void ShowIt()
         {
             foreach (NetworkInterface ni in NetworkInterface.GetAllNetworkInterfaces())

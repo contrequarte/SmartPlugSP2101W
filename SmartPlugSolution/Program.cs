@@ -16,7 +16,7 @@ namespace SmartPlugExample
     {
         const long LISTENINGPORT = 54520;
         const long SENDINGPORT = 20560;
-
+        const int TIMEOUTPERIOD = 1000;
         static void Main(string[] args)
         {
             List<IPAddress> ipAdresses = GetLoacalIPAddresses();
@@ -46,13 +46,17 @@ namespace SmartPlugExample
         }
         static SmartPlug DeviceFinderDemo(IPAddress ipAddressToUse)
         {
-
-            DeviceFinder deviceFinder = new DeviceFinder(SENDINGPORT, LISTENINGPORT);
+            
+            DeviceFinder deviceFinder = new DeviceFinder(SENDINGPORT, LISTENINGPORT, TIMEOUTPERIOD);
 
             // finding devices in the network(s), the computer is located, as these could be
             // more than one, tell the FindDevices method, which IP to use.
             deviceFinder.FindDevices(ipAddressToUse);
-            System.Threading.Thread.Sleep(30000);
+            while (deviceFinder.IsStillSearching)
+            {
+                System.Threading.Thread.Sleep(500);
+            }
+            //System.Threading.Thread.Sleep(30000);
             IEnumerable<Contrequarte.SmartPlug.Core.SmartPlug> smartPlugs = deviceFinder.SmartPlugList;
 
             foreach(var smartP in smartPlugs)
