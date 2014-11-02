@@ -39,10 +39,23 @@ namespace SmartPlugExample
                 SmartPlug plugToPlayWith = DeviceFinderDemo(ipAdresses[0]);
                 plugToPlayWith.UserName = "admin";
                 plugToPlayWith.PassWord = "1234";
-                System.Console.WriteLine(string.Format("SmartPlug used for further demo: Name: {0}  IP: {1}", plugToPlayWith.Details.Name, plugToPlayWith.IpAddress.ToString()));
+                System.Console.WriteLine(string.Format("SmartPlug used for further demo: Name: {0}  IP: {1}", plugToPlayWith.Name, plugToPlayWith.IpAddress.ToString()));
+
+                RenamingDemo(plugToPlayWith);
+
                 PlugPlayDemo(plugToPlayWith);
             }
             int j = ipAdresses.Count();
+        }
+
+        private static void RenamingDemo(SmartPlug plugToPlayWith)
+        {
+             System.Console.WriteLine(string.Format("First let's give the smart plug \"{0}\"", plugToPlayWith.Name));
+             System.Console.Write("Please enter a new name and hit return: ");
+             string newPlugName = System.Console.ReadLine();
+             plugToPlayWith.Name = newPlugName;
+             System.Console.WriteLine(string.Format("The new name of the plug is now: \"{0}\". Hit Enter key to continue!", plugToPlayWith.Name));
+             System.Console.ReadLine();
         }
         static SmartPlug DeviceFinderDemo(IPAddress ipAddressToUse)
         {
@@ -62,7 +75,7 @@ namespace SmartPlugExample
             foreach(var smartP in smartPlugs)
             {
                 System.Console.WriteLine(string.Format("Name: {0} IP:{1} model: {2} sw version: {3} "
-                          , smartP.Details.Name, smartP.IpAddress, smartP.Details.Model, smartP.Details.SoftwareVersion));
+                          , smartP.Name, smartP.IpAddress, smartP.Model, smartP.SoftwareVersion));
             }
 
             int i = smartPlugs.Count();

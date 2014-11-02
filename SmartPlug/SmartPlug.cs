@@ -33,7 +33,38 @@ namespace Contrequarte.SmartPlug.Core
                     password.AppendChar(c);
             }
         }
-        public SmartPlugDetails Details {get; private set;}
+
+        public string Model 
+        { 
+            get 
+            { 
+                return smartPlugDetails.Model; 
+            }
+        }
+
+        public string SoftwareVersion 
+        { 
+            get 
+            {
+                return smartPlugDetails.SoftwareVersion;
+            }
+        }
+
+        public string Name
+        {
+            get { return smartPlugDetails.Name; }
+            set
+            {
+                //first seeting new device name
+                XDocument plugRequest = SmartPlugMessages.SetDeviceName(value);
+                XDocument plugResponse = SendMessage(plugRequest);
+                //second syncing it with the SmartPlugDetails too
+                smartPlugDetails = new SmartPlugDetails(smartPlugDetails.Model, smartPlugDetails.SoftwareVersion, value);
+            }
+        }
+
+        private SmartPlugDetails smartPlugDetails;
+
         public SmartPlugState Status
         {
             get
@@ -82,7 +113,7 @@ namespace Contrequarte.SmartPlug.Core
         public SmartPlug(IPAddress ipAddress, SmartPlugDetails details)
         {
             IpAddress = ipAddress;
-            Details = details;
+            smartPlugDetails = details;
         }
 
         #endregion constructor
@@ -130,13 +161,12 @@ namespace Contrequarte.SmartPlug.Core
             }
 
             XDocument xmlResponse = SendMessage(xmlSetScheduleMessage);
-            int i = 3;
         }
 
         public decimal GetCummulatedPowerConsumption(EnergyPeriods energyPeriod)
         {
             // power metrics are available for model "SP2101W " model "SP1101W" doesen't support power metrics!
-            if (this.Details.Model.ToUpper() != "SP2101W")
+            if (this.smartPlugDetails.Model.ToUpper() != "SP2101W")
             {
                 return 0;
             }
